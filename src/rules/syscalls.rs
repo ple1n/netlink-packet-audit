@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use byteorder::{ByteOrder, NativeEndian};
-
-use netlink_packet_utils::DecodeError;
+use netlink_packet_core::{parse_u32, DecodeError};
 
 use crate::constants::*;
 
@@ -27,8 +25,7 @@ impl RuleSyscalls {
         let mut mask = RuleSyscalls::new_zeroed();
         let mut word = 0;
         while word < AUDIT_BITMASK_SIZE {
-            mask.0[word] =
-                NativeEndian::read_u32(&slice[word * 4..word * 4 + 4]);
+            mask.0[word] = parse_u32(&slice[word * 4..word * 4 + 4]).unwrap();
             word += 1;
         }
         Ok(mask)
@@ -138,7 +135,7 @@ impl<'a> IntoIterator for &'a RuleSyscalls {
     }
 }
 
-impl<'a> Iterator for RuleSyscallsIter<&'a RuleSyscalls> {
+impl Iterator for RuleSyscallsIter<&RuleSyscalls> {
     type Item = u32;
     fn next(&mut self) -> Option<Self::Item> {
         while self.index < BITMASK_BIT_LEN {
@@ -164,7 +161,7 @@ impl<'a> IntoIterator for &'a mut RuleSyscalls {
     }
 }
 
-impl<'a> Iterator for RuleSyscallsIter<&'a mut RuleSyscalls> {
+impl Iterator for RuleSyscallsIter<&mut RuleSyscalls> {
     type Item = u32;
     fn next(&mut self) -> Option<Self::Item> {
         while self.index < BITMASK_BIT_LEN {
